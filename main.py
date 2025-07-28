@@ -27,3 +27,8 @@ class DealCloudTransformer:
             'notes': notes
         })
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {table}: {action} - {record_count} records {notes}")
+
+    def generate_unique_id(self, primary_key, secondary_key=""):
+        """Generate consistent unique identifiers"""
+        combined_key = f"{primary_key.lower().strip()}_{secondary_key.lower().strip()}"
+        return hashlib.md5(combined_key.encode()).hexdigest()[:12]
