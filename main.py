@@ -49,3 +49,30 @@ class DealCloudTransformer:
         except Exception as e:
             self.log_transformation(filename, "ERROR", 0, str(e))
             return pd.DataFrame()
+
+    def extract_companies(self):
+        """Extract and remove duplicate companies from all sources"""
+        companies = []
+
+        # Load pipeline data
+        bs_pipeline = self.load_pipeline_data('Business Services Pipeline.xlsx', 5)
+        crh_pipeline = self.load_pipeline_data('Consumer Retail and Healthcare Pipeline.xlsx', 7)
+
+        # Extract companies from Business Services pipeline
+        if not bs_pipeline.empty:
+            for _, row in bs_pipeline.iterrows():
+                company_name = row.get('Company Name', '')
+                if pd.notna(company_name) and company_name.strip():
+                    company_id = self.generate_unique_id(company_name)
+
+                    if company_id not in self.unique_companies:
+                        self.unique_companies[company_id] = {
+                            'company_id': company_id,
+                            'company_name': self.normalize_text(company_name),
+                            'primary_vertical': 'Business Services',
+                            'sub_vertical': self.normalize_text(row.get('Sub Vertical', '')),
+                            'current_owner': self.normalize_text(row.get('Current Owner', '')),
+                            'description': row.get('Business Description', ''),
+                            'source_file': 'Business Services Pipeline',
+                            'created_date': datetime.now().isoformat()
+                        }
