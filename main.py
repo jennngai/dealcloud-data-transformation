@@ -16,3 +16,14 @@ class DealCloudTransformer:
             'verticals': set(),
             'sub_verticals': set()
         }
+
+    def log_transformation(self, table, action, record_count, notes=""):
+        """Maintain audit trail of all transformations"""
+        self.audit_trail.append({
+            'timestamp': datetime.now().isoformat(),
+            'table': table,
+            'action': action,
+            'record_count': record_count,
+            'notes': notes
+        })
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {table}: {action} - {record_count} records {notes}")
