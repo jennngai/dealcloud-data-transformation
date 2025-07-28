@@ -32,3 +32,20 @@ class DealCloudTransformer:
         """Generate consistent unique identifiers"""
         combined_key = f"{primary_key.lower().strip()}_{secondary_key.lower().strip()}"
         return hashlib.md5(combined_key.encode()).hexdigest()[:12]
+
+    def normalize_text(self, text):
+        """Standardize text fields for choice field creation"""
+        if pd.isna(text) or text == "":
+            return None
+        return str(text).strip().title()
+
+    def load_pipeline_data(self, filename, header_row):
+        """Load pipeline data with proper header detection"""
+        try:
+            df = pd.read_excel(filename, header=header_row)
+            df = df.dropna(how='all').dropna(axis=1, how='all')
+            self.log_transformation(filename, "loaded", len(df))
+            return df
+        except Exception as e:
+            self.log_transformation(filename, "ERROR", 0, str(e))
+            return pd.DataFrame()
