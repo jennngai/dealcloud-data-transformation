@@ -76,3 +76,27 @@ class DealCloudTransformer:
                             'source_file': 'Business Services Pipeline',
                             'created_date': datetime.now().isoformat()
                         }
+
+        # Extract companies from Consumer Retail Healthcare pipeline
+        if not crh_pipeline.empty:
+            # Headers might be different - need to map based on actual structure
+            for _, row in crh_pipeline.iterrows():
+                # Assuming first column is company name based on analysis
+                company_name = row.iloc[0] if len(row) > 0 else ''
+                if pd.notna(company_name) and company_name.strip():
+                    company_id = self.generate_unique_id(company_name)
+
+                    if company_id not in self.unique_companies:
+                        vertical = row.iloc[10] if len(row) > 10 else 'Consumer Retail & Healthcare'
+                        sub_vertical = row.iloc[11] if len(row) > 11 else ''
+
+                        self.unique_companies[company_id] = {
+                            'company_id': company_id,
+                            'company_name': self.normalize_text(company_name),
+                            'primary_vertical': 'Consumer Retail & Healthcare',
+                            'sub_vertical': self.normalize_text(sub_vertical),
+                            'current_owner': self.normalize_text(row.iloc[19] if len(row) > 19 else ''),
+                            'description': row.iloc[20] if len(row) > 20 else '',
+                            'source_file': 'Consumer Retail Healthcare Pipeline',
+                            'created_date': datetime.now().isoformat()
+                        }
