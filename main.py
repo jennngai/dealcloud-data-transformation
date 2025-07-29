@@ -366,3 +366,26 @@ class DealCloudTransformer:
         participants_df = pd.DataFrame(marketing_participants)
         self.log_transformation("Marketing Participants", "extracted", len(participants_df))
         return participants_df
+
+    def create_choice_fields_reference(self):
+        """Create reference file for DealCloud choice field configuration"""
+        choice_fields_data = []
+
+        for field_type, values in self.choice_fields.items():
+            for value in sorted(values):
+                if value:  # Skip None/empty values
+                    choice_fields_data.append({
+                        'field_type': field_type,
+                        'choice_value': value,
+                        'display_order': len(choice_fields_data) + 1
+                    })
+
+        choice_df = pd.DataFrame(choice_fields_data)
+        self.log_transformation("Choice Fields", "created", len(choice_df))
+        return choice_df
+
+    def save_audit_trail(self):
+        """Save transformation audit trail"""
+        audit_df = pd.DataFrame(self.audit_trail)
+        audit_df.to_csv('transformation_audit_trail.csv', index=False)
+        return audit_df
