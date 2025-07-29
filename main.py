@@ -330,3 +330,39 @@ class DealCloudTransformer:
         deals_df = pd.DataFrame(deals)
         self.log_transformation("Deals", "extracted", len(deals_df))
         return deals_df
+
+    def extract_marketing_participants(self):
+        """Transform event data into marketing participants"""
+        marketing_participants = []
+
+        try:
+            events_file = pd.ExcelFile('Events.xlsx')
+
+            for sheet_name in events_file.sheet_names:
+                event_attendees = pd.read_excel('Events.xlsx', sheet_name=sheet_name)
+
+                for _, row in event_attendees.iterrows():
+                    participant_id = str(uuid.uuid4())[:12]
+                    contact_id = self.generate_unique_id(row['E-mail'], row['Name'])
+
+                    marketing_participants.append({
+                        'participant_id': participant_id,
+                        'contact_id': contact_id,
+                        'event_name': sheet_name,
+                        'attendee_name': row['Name'],
+                        'attendee_email': row['E-mail'],
+                        'attendee_status': row['Attendee Status'],
+                        'rsvp_status': 'Yes' if row['Attendee Status'] in ['RSVP\'d', 'Checked In'] else 'No',
+                        'attendance_confirmed': 'Yes' if row['Attendee Status'] == 'Checked In' else 'No',
+                        'event_type': 'Network Event',
+                        'source_file': f'Events - {sheet_name}',
+                        'created_date': datetime.now().isoformat()
+                    })
+
+        except Exception as e:
+            self.log_transformation("Marketing Participants", "ERROR", 0, str(e))
+            return pd.DataFrame()
+
+        participants_df = pd.DataFrame(marketing_participants)
+        self.log_transformation("Marketing Participants", "extracted", len(participants_df))
+        return participants_df
