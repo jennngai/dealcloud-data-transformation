@@ -218,3 +218,115 @@ class DealCloudTransformer:
         contacts_df = pd.DataFrame(list(self.unique_contacts.values()))
         self.log_transformation("Contacts", "extracted", len(contacts_df))
         return contacts_df
+
+    def extract_deals(self):
+        """Extract and normalize deal data from both pipelines"""
+        deals = []
+
+        # Business Services deals
+        bs_pipeline = self.load_pipeline_data('Business Services Pipeline.xlsx', 5)
+        if not bs_pipeline.empty:
+            for _, row in bs_pipeline.iterrows():
+                company_name = row.get('Company Name', '')
+                if pd.notna(company_name) and company_name.strip():
+                    deal_id = str(uuid.uuid4())[:12]
+                    company_id = self.generate_unique_id(company_name)
+
+                    # Normalize choice fields
+                    status = self.normalize_text(row.get('Status', ''))
+                    sourcing = self.normalize_text(row.get('Sourcing', ''))
+                    transaction_type = self.normalize_text(row.get('Transaction Type', ''))
+                    vertical = self.normalize_text(row.get('Vertical', ''))
+                    sub_vertical = self.normalize_text(row.get('Sub Vertical', ''))
+
+                    # Track choice fields for normalization
+                    if status: self.choice_fields['deal_status'].add(status)
+                    if sourcing: self.choice_fields['sourcing_type'].add(sourcing)
+                    if transaction_type: self.choice_fields['transaction_type'].add(transaction_type)
+                    if vertical: self.choice_fields['verticals'].add(vertical)
+                    if sub_vertical: self.choice_fields['sub_verticals'].add(sub_vertical)
+
+                    deals.append({
+                        'deal_id': deal_id,
+                        'company_id': company_id,
+                        'company_name': company_name,
+                        'project_name': row.get('Project Name', ''),
+                        'date_added': row.get('Date Added', ''),
+                        'investment_bank': row.get('Invest. Bank', ''),
+                        'sourcing': sourcing,
+                        'transaction_type': transaction_type,
+                        'ebitda_2015': row.get('2015A EBITDA', ''),
+                        'ebitda_2016': row.get('2016A EBITDA', ''),
+                        'ebitda_2017': row.get('2017A/E EBITDA', ''),
+                        'vertical': vertical,
+                        'sub_vertical': sub_vertical,
+                        'enterprise_value': row.get('Enterprise Value', ''),
+                        'equity_investment_est': row.get('Equity Investment Est.', ''),
+                        'status': status,
+                        'current_owner': row.get('Current Owner', ''),
+                        'business_description': row.get('Business Description', ''),
+                        'lead_md': row.get('Lead MD', ''),
+                        'pipeline_source': 'Business Services',
+                        'created_date': datetime.now().isoformat()
+                    })
+
+        # Consumer Retail Healthcare deals
+        crh_pipeline = self.load_pipeline_data('Consumer Retail and Healthcare Pipeline.xlsx', 7)
+        if not crh_pipeline.empty:
+            for _, row in crh_pipeline.iterrows():
+                # Map columns based on analysis (assuming standard order)
+                company_name = row.iloc[0] if len(row) > 0 else ''
+                if pd.notna(company_name) and company_name.strip():
+                    deal_id = str(uuid.uuid4())[:12]
+                    company_id = self.generate_unique_id(company_name)
+
+                    # Extract data based on column positions from analysis
+                    project_name = row.iloc[1] if len(row) > 1 else ''
+                    date_added = row.iloc[2] if len(row) > 2 else ''
+                    investment_bank = row.iloc[3] if len(row) > 3 else ''
+                    banker = row.iloc[4] if len(row) > 4 else ''
+                    sourcing = self.normalize_text(row.iloc[7] if len(row) > 7 else '')
+                    transaction_type = self.normalize_text(row.iloc[8] if len(row) > 8 else '')
+                    vertical = self.normalize_text(row.iloc[10] if len(row) > 10 else '')
+                    sub_vertical = self.normalize_text(row.iloc[11] if len(row) > 11 else '')
+                    status = self.normalize_text(row.iloc[15] if len(row) > 15 else '')
+
+                    # Track choice fields
+                    if status: self.choice_fields['deal_status'].add(status)
+                    if sourcing: self.choice_fields['sourcing_type'].add(sourcing)
+                    if transaction_type: self.choice_fields['transaction_type'].add(transaction_type)
+                    if vertical: self.choice_fields['verticals'].add(vertical)
+                    if sub_vertical: self.choice_fields['sub_verticals'].add(sub_vertical)
+
+                    deals.append({
+                        'deal_id': deal_id,
+                        'company_id': company_id,
+                        'company_name': company_name,
+                        'project_name': project_name,
+                        'date_added': date_added,
+                        'investment_bank': investment_bank,
+                        'banker': banker,
+                        'banker_email': row.iloc[5] if len(row) > 5 else '',
+                        'banker_phone': row.iloc[6] if len(row) > 6 else '',
+                        'sourcing': sourcing,
+                        'transaction_type': transaction_type,
+                        'ltm_revenue': row.iloc[9] if len(row) > 9 else '',
+                        'ltm_ebitda': row.iloc[10] if len(row) > 10 else '',
+                        'vertical': vertical,
+                        'sub_vertical': sub_vertical,
+                        'enterprise_value': row.iloc[12] if len(row) > 12 else '',
+                        'equity_investment_est': row.iloc[13] if len(row) > 13 else '',
+                        'status': status,
+                        'portfolio_status': row.iloc[16] if len(row) > 16 else '',
+                        'active_stage': row.iloc[17] if len(row) > 17 else '',
+                        'passed_rationale': row.iloc[18] if len(row) > 18 else '',
+                        'current_owner': row.iloc[19] if len(row) > 19 else '',
+                        'business_description': row.iloc[20] if len(row) > 20 else '',
+                        'lead_md': row.iloc[21] if len(row) > 21 else '',
+                        'pipeline_source': 'Consumer Retail & Healthcare',
+                        'created_date': datetime.now().isoformat()
+                    })
+
+        deals_df = pd.DataFrame(deals)
+        self.log_transformation("Deals", "extracted", len(deals_df))
+        return deals_df
