@@ -5,7 +5,7 @@ This project transforms a Private Equity firm's Excel data files into normalized
 ## Quick Start
 Prerequisites
 ```bash
-bashpip install pandas openpyxl numpy
+pip install -r requirements.txt
 ```
 
 ## File Setup
@@ -20,7 +20,7 @@ Place the following Excel files in the project directory:
 ## Run Transformation
 
 ```bash
-bashpython main.py
+python main.py
 ```
 
 ## Expected Output Files
