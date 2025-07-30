@@ -389,3 +389,69 @@ class DealCloudTransformer:
         audit_df = pd.DataFrame(self.audit_trail)
         audit_df.to_csv('transformation_audit_trail.csv', index=False)
         return audit_df
+
+    def transform_all_data(self):
+        """Main transformation function - processes all data"""
+        print("=" * 60)
+        print("DEALCLOUD DATA TRANSFORMATION STARTING")
+        print("=" * 60)
+
+        # Extract all data
+        companies_df = self.extract_companies()
+        contacts_df = self.extract_contacts()
+        deals_df = self.extract_deals()
+        marketing_df = self.extract_marketing_participants()
+        choice_fields_df = self.create_choice_fields_reference()
+
+        # Save all files
+        companies_df.to_csv('dealcloud_companies.csv', index=False)
+        contacts_df.to_csv('dealcloud_contacts.csv', index=False)
+        deals_df.to_csv('dealcloud_deals.csv', index=False)
+        marketing_df.to_csv('dealcloud_marketing_participants.csv', index=False)
+        choice_fields_df.to_csv('dealcloud_choice_fields.csv', index=False)
+
+        # Save audit trail
+        audit_df = self.save_audit_trail()
+
+        print("\n" + "=" * 60)
+        print("TRANSFORMATION SUMMARY")
+        print("=" * 60)
+        print(f"Companies: {len(companies_df)} records")
+        print(f"Contacts: {len(contacts_df)} records")
+        print(f"Deals: {len(deals_df)} records")
+        print(f"Marketing Participants: {len(marketing_df)} records")
+        print(f"Choice Fields: {len(choice_fields_df)} options")
+        print(f"Total Transformations: {len(audit_df)} operations")
+
+        return {
+            'companies': companies_df,
+            'contacts': contacts_df,
+            'deals': deals_df,
+            'marketing_participants': marketing_df,
+            'choice_fields': choice_fields_df,
+            'audit_trail': audit_df
+        }
+
+if __name__ == "__main__":
+    # Initialize transformer
+    transformer = DealCloudTransformer()
+
+    # Run complete transformation
+    results = transformer.transform_all_data()
+
+    # Display sample data for verification
+    print("\n" + "=" * 60)
+    print("SAMPLE DATA PREVIEW")
+    print("=" * 60)
+
+    print("\nCompanies Sample:")
+    print(results['companies'][['company_id', 'company_name', 'primary_vertical']].head(3))
+
+    print("\nContacts Sample:")
+    print(results['contacts'][['contact_id', 'name', 'firm', 'tier']].head(3))
+
+    print("\nDeals Sample:")
+    print(results['deals'][['deal_id', 'company_name', 'status', 'pipeline_source']].head(3))
+
+    print("\nMarketing Participants Sample:")
+    print(results['marketing_participants'][['participant_id', 'event_name', 'attendee_status']].head(3))
