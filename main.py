@@ -39,15 +39,29 @@ class DealCloudTransformer:
         return str(text).strip().title()
 
     def load_pipeline_data(self, filename, header_row):
-        """Load pipeline data with proper header detection"""
-        try:
-            df = pd.read_excel(filename, header=header_row)
-            df = df.dropna(how='all').dropna(axis=1, how='all')
-            self.log_transformation(filename, "loaded", len(df))
-            return df
-        except Exception as e:
-            self.log_transformation(filename, "ERROR", 0, str(e))
-            return pd.DataFrame()
+      """Load pipeline data with proper header detection"""
+      try:
+          if 'Consumer Retail' in filename:
+              # For CRH pipeline, manually handle the headers
+              df_raw = pd.read_excel(filename, header=None)  # Load without headers first
+
+              # Extract the actual header row (row 8 based on our analysis)
+              headers = df_raw.iloc[8].tolist()  # Row 8 contains the actual headers
+
+              # Get the data starting from row 9
+              df = pd.read_excel(filename, header=None, skiprows=9)
+              df.columns = headers[:len(df.columns)]  # Set the correct headers
+
+          else:
+              # For other files, use normal header detection
+              df = pd.read_excel(filename, header=header_row)
+
+          df = df.dropna(how='all').dropna(axis=1, how='all')
+          self.log_transformation(filename, "loaded", len(df))
+          return df
+      except Exception as e:
+          self.log_transformation(filename, "ERROR", 0, str(e))
+          return pd.DataFrame()
 
     def extract_companies(self):
         """Extract and remove duplicate companies from all sources"""
@@ -55,7 +69,7 @@ class DealCloudTransformer:
 
         # Load pipeline data
         bs_pipeline = self.load_pipeline_data('Business Services Pipeline.xlsx', 5)
-        crh_pipeline = self.load_pipeline_data('Consumer Retail and Healthcare Pipeline.xlsx', 7)
+        crh_pipeline = self.load_pipeline_data('Consumer Retail and Healthcare Pipeline.xlsx', 8)
 
         # Extract companies from Business Services pipeline
         if not bs_pipeline.empty:
@@ -79,6 +93,8 @@ class DealCloudTransformer:
         # Extract companies from Consumer Retail Healthcare pipeline
         if not crh_pipeline.empty:
             # Headers might be different - need to map based on actual structure
+            print("CRH Pipeline columns:", crh_pipeline.columns.tolist())
+            print("Sample row:", crh_pipeline.iloc[0].tolist())
             for _, row in crh_pipeline.iterrows():
                 # Assuming first column is company name based on analysis
                 company_name = row.iloc[0] if len(row) > 0 else ''
@@ -86,8 +102,8 @@ class DealCloudTransformer:
                     company_id = self.generate_unique_id(company_name)
 
                     if company_id not in self.unique_companies:
-                        vertical = row.iloc[10] if len(row) > 10 else 'Consumer Retail & Healthcare'
-                        sub_vertical = row.iloc[11] if len(row) > 11 else ''
+                        vertical = row.get('Vertical', 'Consumer Retail & Healthcare')
+                        sub_vertical = row.get('Sub Vertical', '')
 
                         self.unique_companies[company_id] = {
                             'company_id': company_id,
@@ -270,25 +286,36 @@ class DealCloudTransformer:
                     })
 
         # Consumer Retail Healthcare deals
-        crh_pipeline = self.load_pipeline_data('Consumer Retail and Healthcare Pipeline.xlsx', 7)
+        crh_pipeline = self.load_pipeline_data('Consumer Retail and Healthcare Pipeline.xlsx', 8)
         if not crh_pipeline.empty:
             for _, row in crh_pipeline.iterrows():
+                company_name = row.get('Company Name', '')
                 # Map columns based on analysis (assuming standard order)
-                company_name = row.iloc[0] if len(row) > 0 else ''
                 if pd.notna(company_name) and company_name.strip():
                     deal_id = str(uuid.uuid4())[:12]
                     company_id = self.generate_unique_id(company_name)
-
-                    # Extract data based on column positions from analysis
-                    project_name = row.iloc[1] if len(row) > 1 else ''
-                    date_added = row.iloc[2] if len(row) > 2 else ''
-                    investment_bank = row.iloc[3] if len(row) > 3 else ''
-                    banker = row.iloc[4] if len(row) > 4 else ''
-                    sourcing = self.normalize_text(row.iloc[7] if len(row) > 7 else '')
-                    transaction_type = self.normalize_text(row.iloc[8] if len(row) > 8 else '')
-                    vertical = self.normalize_text(row.iloc[10] if len(row) > 10 else '')
-                    sub_vertical = self.normalize_text(row.iloc[11] if len(row) > 11 else '')
-                    status = self.normalize_text(row.iloc[15] if len(row) > 15 else '')
+                    company_name = row.get('Company Name', '')
+                    project_name = row.get('Project Name', '')
+                    date_added = row.get('Date Added', '')
+                    investment_bank = row.get('Invest. Bank', '')
+                    banker = row.get('Banker', '')
+                    banker_email = row.get('Banker Email', '')
+                    banker_phone = row.get('Banker Phone Number', '')
+                    sourcing = self.normalize_text(row.get('Sourcing', ''))
+                    transaction_type = self.normalize_text(row.get('Transaction Type', ''))
+                    ltm_revenue = row.get('LTM Revenue', '')
+                    ltm_ebitda = row.get('LTM EBITDA', '')
+                    vertical = self.normalize_text(row.get('Vertical', ''))
+                    sub_vertical = self.normalize_text(row.get('Sub Vertical', ''))
+                    enterprise_value = row.get('Enterprise Value', '')
+                    equity_investment_est = row.get('Est. Equity Investment', '')
+                    status = self.normalize_text(row.get('Status', ''))
+                    portfolio_status = row.get('Portfolio Company Status', '')
+                    active_stage = row.get('Active Stage', '')
+                    passed_rationale = row.get('Passed Rationale', '')
+                    current_owner = row.get('Current Owner', '')
+                    business_description = row.get('Business Description', '')
+                    lead_md = row.get('Lead MD', '')
 
                     # Track choice fields
                     if status: self.choice_fields['deal_status'].add(status)
@@ -305,23 +332,23 @@ class DealCloudTransformer:
                         'date_added': date_added,
                         'investment_bank': investment_bank,
                         'banker': banker,
-                        'banker_email': row.iloc[5] if len(row) > 5 else '',
-                        'banker_phone': row.iloc[6] if len(row) > 6 else '',
+                        'banker_email': banker_email,              # ← Use variable
+                        'banker_phone': banker_phone,              # ← Use variable
                         'sourcing': sourcing,
                         'transaction_type': transaction_type,
-                        'ltm_revenue': row.iloc[9] if len(row) > 9 else '',
-                        'ltm_ebitda': row.iloc[10] if len(row) > 10 else '',
+                        'ltm_revenue': ltm_revenue,                # ← Use variable
+                        'ltm_ebitda': ltm_ebitda,                  # ← Use variable
                         'vertical': vertical,
                         'sub_vertical': sub_vertical,
-                        'enterprise_value': row.iloc[12] if len(row) > 12 else '',
-                        'equity_investment_est': row.iloc[13] if len(row) > 13 else '',
+                        'enterprise_value': enterprise_value,      # ← Use variable
+                        'equity_investment_est': equity_investment_est,  # ← Use variable
                         'status': status,
-                        'portfolio_status': row.iloc[16] if len(row) > 16 else '',
-                        'active_stage': row.iloc[17] if len(row) > 17 else '',
-                        'passed_rationale': row.iloc[18] if len(row) > 18 else '',
-                        'current_owner': row.iloc[19] if len(row) > 19 else '',
-                        'business_description': row.iloc[20] if len(row) > 20 else '',
-                        'lead_md': row.iloc[21] if len(row) > 21 else '',
+                        'portfolio_status': portfolio_status,      # ← Use variable
+                        'active_stage': active_stage,              # ← Use variable
+                        'passed_rationale': passed_rationale,      # ← Use variable
+                        'current_owner': current_owner,            # ← Use variable
+                        'business_description': business_description,  # ← Use variable
+                        'lead_md': lead_md,                        # ← Use variable
                         'pipeline_source': 'Consumer Retail & Healthcare',
                         'created_date': datetime.now().isoformat()
                     })
