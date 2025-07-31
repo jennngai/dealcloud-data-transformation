@@ -93,11 +93,9 @@ class DealCloudTransformer:
         # Extract companies from Consumer Retail Healthcare pipeline
         if not crh_pipeline.empty:
             # Headers might be different - need to map based on actual structure
-            print("CRH Pipeline columns:", crh_pipeline.columns.tolist())
-            print("Sample row:", crh_pipeline.iloc[0].tolist())
             for _, row in crh_pipeline.iterrows():
                 # Assuming first column is company name based on analysis
-                company_name = row.iloc[0] if len(row) > 0 else ''
+                company_name = row.get('Company Name', '')
                 if pd.notna(company_name) and company_name.strip():
                     company_id = self.generate_unique_id(company_name)
 
@@ -110,8 +108,8 @@ class DealCloudTransformer:
                             'company_name': self.normalize_text(company_name),
                             'primary_vertical': 'Consumer Retail & Healthcare',
                             'sub_vertical': self.normalize_text(sub_vertical),
-                            'current_owner': self.normalize_text(row.iloc[19] if len(row) > 19 else ''),
-                            'description': row.iloc[20] if len(row) > 20 else '',
+                            'current_owner': self.normalize_text(row.get('Current Owner', '')),
+                            'description': row.get('Business Description', ''),
                             'source_file': 'Consumer Retail Healthcare Pipeline',
                             'created_date': datetime.now().isoformat()
                         }
@@ -294,7 +292,6 @@ class DealCloudTransformer:
                 if pd.notna(company_name) and company_name.strip():
                     deal_id = str(uuid.uuid4())[:12]
                     company_id = self.generate_unique_id(company_name)
-                    company_name = row.get('Company Name', '')
                     project_name = row.get('Project Name', '')
                     date_added = row.get('Date Added', '')
                     investment_bank = row.get('Invest. Bank', '')
