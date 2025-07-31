@@ -332,23 +332,23 @@ class DealCloudTransformer:
                         'date_added': date_added,
                         'investment_bank': investment_bank,
                         'banker': banker,
-                        'banker_email': banker_email,              # ← Use variable
-                        'banker_phone': banker_phone,              # ← Use variable
+                        'banker_email': banker_email,
+                        'banker_phone': banker_phone,
                         'sourcing': sourcing,
                         'transaction_type': transaction_type,
-                        'ltm_revenue': ltm_revenue,                # ← Use variable
-                        'ltm_ebitda': ltm_ebitda,                  # ← Use variable
+                        'ltm_revenue': ltm_revenue,
+                        'ltm_ebitda': ltm_ebitda,
                         'vertical': vertical,
                         'sub_vertical': sub_vertical,
-                        'enterprise_value': enterprise_value,      # ← Use variable
-                        'equity_investment_est': equity_investment_est,  # ← Use variable
+                        'enterprise_value': enterprise_value,
+                        'equity_investment_est': equity_investment_est,
                         'status': status,
-                        'portfolio_status': portfolio_status,      # ← Use variable
-                        'active_stage': active_stage,              # ← Use variable
-                        'passed_rationale': passed_rationale,      # ← Use variable
-                        'current_owner': current_owner,            # ← Use variable
-                        'business_description': business_description,  # ← Use variable
-                        'lead_md': lead_md,                        # ← Use variable
+                        'portfolio_status': portfolio_status,
+                        'active_stage': active_stage,
+                        'passed_rationale': passed_rationale,
+                        'current_owner': current_owner,
+                        'business_description': business_description,
+                        'lead_md': lead_md,
                         'pipeline_source': 'Consumer Retail & Healthcare',
                         'created_date': datetime.now().isoformat()
                     })
