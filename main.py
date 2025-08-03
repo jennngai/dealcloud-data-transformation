@@ -2,6 +2,7 @@ import pandas as pd
 from datetime import datetime
 import hashlib
 import uuid
+import re
 
 class DealCloudTransformer:
     def __init__(self):
@@ -52,6 +53,48 @@ class DealCloudTransformer:
         }
 
         return corrections.get(cleaned, cleaned)
+
+    def parse_contact_info(self, contact_text):
+        """Parse messy contact information into structured data"""
+        if pd.isna(contact_text) or not contact_text:
+            return {'name': '', 'title': '', 'phone': '', 'email': ''}
+
+        # Clean up and split by lines (handle both \n and \r\n)
+        text = str(contact_text).strip()
+        lines = re.split(r'[\r\n]+', text)
+        lines = [line.strip() for line in lines if line.strip()]
+
+        contact_info = {'name': '', 'title': '', 'phone': '', 'email': ''}
+
+        if len(lines) == 1:
+            line = lines[0]
+            # Check for email
+            if '@' in line and '.' in line:
+                contact_info['email'] = line
+            # Check for phone
+            elif re.search(r'\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}', line):
+                contact_info['phone'] = line
+            # Try comma separation for "Name, Title" pattern
+            elif ',' in line:
+                parts = [p.strip() for p in line.split(',')]
+                contact_info['name'] = parts[0]
+                if len(parts) > 1:
+                    contact_info['title'] = ', '.join(parts[1:])
+            else:
+                contact_info['name'] = line
+        else:
+            # Multi-line parsing
+            for i, line in enumerate(lines):
+                if '@' in line and '.' in line:
+                    contact_info['email'] = line
+                elif re.search(r'\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}', line):
+                    contact_info['phone'] = line
+                elif i == 0:  # First line is usually name
+                    contact_info['name'] = line
+                elif i == 1 and not contact_info['title']:
+                    contact_info['title'] = line
+
+        return contact_info
 
     def load_pipeline_data(self, filename, header_row):
       """Load pipeline data with proper header detection"""
@@ -131,8 +174,12 @@ class DealCloudTransformer:
 
         # Extract PE competitor companies
         try:
-            pe_comps = pd.read_excel('PE Comps.xlsx', header=2)  # ← Use Row 2 as headers
+            pe_comps = pd.read_excel('PE Comps.xlsx', header=2)  # Use row 2 as headers
             pe_comps = pe_comps.dropna(how='all')
+
+            self.log_transformation("PE Comps.xlsx", "loaded", len(pe_comps))
+
+            pe_companies_added = 0
 
             for _, row in pe_comps.iterrows():
                 company_name = row.get('Company Name', '')
@@ -140,20 +187,42 @@ class DealCloudTransformer:
                     company_id = self.generate_unique_id(company_name)
 
                     if company_id not in self.unique_companies:
+                        # Parse contact information using our new function
+                        contact1_raw = row.get('Contact Name 1', '')
+                        contact2_raw = row.get('Contact 2', '')
+
+                        # Call the parsing function
+                        contact1_info = self.parse_contact_info(contact1_raw)
+                        contact2_info = self.parse_contact_info(contact2_raw)
+
                         self.unique_companies[company_id] = {
                             'company_id': company_id,
                             'company_name': self.normalize_text(company_name),
                             'company_type': 'Private Equity Firm',
                             'website': row.get('Website', ''),
-                            'aum_billions': row.get('AUM\n(Bns)', ''), # Note: Header has \n
+                            'aum_billions': row.get('AUM\r\n(Bns)', '') or row.get('AUM', ''),
                             'sectors': row.get('Sectors', ''),
                             'portfolio_companies': row.get('Sample Portfolio Companies', ''),
-                            'contact_name_1': row.get('Contact Name 1', ''),
-                            'contact_name_2': row.get('Contact 2', ''),
+
+                            # Use parsed contact 1 data
+                            'contact_1_name': contact1_info['name'],
+                            'contact_1_title': contact1_info['title'],
+                            'contact_1_phone': contact1_info['phone'],
+                            'contact_1_email': contact1_info['email'],
+
+                            # Use parsed contact 2 data
+                            'contact_2_name': contact2_info['name'],
+                            'contact_2_title': contact2_info['title'],
+                            'contact_2_phone': contact2_info['phone'],
+                            'contact_2_email': contact2_info['email'],
+
                             'comments': row.get('Comments', ''),
                             'source_file': 'PE Comps',
                             'created_date': datetime.now().isoformat()
                         }
+
+                        pe_companies_added += 1
+            self.log_transformation("PE Comps", "extracted", pe_companies_added)
         except Exception as e:
             self.log_transformation("PE Comps", "ERROR", 0, str(e))
 
