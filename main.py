@@ -413,13 +413,15 @@ class DealCloudTransformer:
         choice_fields_data = []
 
         for field_type, values in self.choice_fields.items():
+            display_order = 1  # Reset for each field type
             for value in sorted(values):
                 if value:  # Skip None/empty values
                     choice_fields_data.append({
                         'field_type': field_type,
                         'choice_value': value,
-                        'display_order': len(choice_fields_data) + 1
+                        'display_order': display_order
                     })
+                    display_order += 1  # Increment within field type
 
         choice_df = pd.DataFrame(choice_fields_data)
         self.log_transformation("Choice Fields", "created", len(choice_df))
