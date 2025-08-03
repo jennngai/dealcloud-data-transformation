@@ -131,11 +131,11 @@ class DealCloudTransformer:
 
         # Extract PE competitor companies
         try:
-            pe_comps = pd.read_excel('PE Comps.xlsx', header=1)
+            pe_comps = pd.read_excel('PE Comps.xlsx', header=2)  # ← Use Row 2 as headers
             pe_comps = pe_comps.dropna(how='all')
 
             for _, row in pe_comps.iterrows():
-                company_name = row.iloc[1] if len(row) > 1 else ''  # Company Name column
+                company_name = row.get('Company Name', '')
                 if pd.notna(company_name) and company_name.strip():
                     company_id = self.generate_unique_id(company_name)
 
@@ -144,10 +144,13 @@ class DealCloudTransformer:
                             'company_id': company_id,
                             'company_name': self.normalize_text(company_name),
                             'company_type': 'Private Equity Firm',
-                            'website': row.iloc[2] if len(row) > 2 else '',
-                            'aum_billions': row.iloc[3] if len(row) > 3 else None,
-                            'sectors': row.iloc[4] if len(row) > 4 else '',
-                            'portfolio_companies': row.iloc[5] if len(row) > 5 else '',
+                            'website': row.get('Website', ''),
+                            'aum_billions': row.get('AUM\n(Bns)', ''), # Note: Header has \n
+                            'sectors': row.get('Sectors', ''),
+                            'portfolio_companies': row.get('Sample Portfolio Companies', ''),
+                            'contact_name_1': row.get('Contact Name 1', ''),
+                            'contact_name_2': row.get('Contact 2', ''),
+                            'comments': row.get('Comments', ''),
                             'source_file': 'PE Comps',
                             'created_date': datetime.now().isoformat()
                         }
