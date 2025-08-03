@@ -26,3 +26,20 @@ python main.py
 ## Expected Output Files
 
 The script generates 6 CSV files ready for DealCloud import:
+
+| File | Description | Import Order |
+|------|-------------|--------------|
+| `dealcloud_companies.csv` | Unique companies from all sources | 1st |
+| `dealcloud_contacts.csv` | Merged contact data with tier classification | 2nd |
+| `dealcloud_deals.csv` | Combined pipeline deals from both verticals | 3rd |
+| `dealcloud_marketing_participants.csv` | Event attendee data | 4th |
+| `dealcloud_choice_fields.csv` | Standardized dropdown options | (Configuration) |
+| `transformation_audit_trail.csv` | Complete processing log | (Reference) |
+
+## Key Features
+
+- Unique ID Generation: Creates consistent identifiers to handle duplicate names
+- Data Normalization: Standardizes text fields for clean dropdown options
+- Audit Trail: Comprehensive logging for debugging and validation
+- Choice Field Extraction: Identifies all unique values for DealCloud configuration
+- Relationship Mapping: Maintains data relationships through foreign keys
