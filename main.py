@@ -36,7 +36,19 @@ class DealCloudTransformer:
         """Standardize text fields for choice field creation"""
         if pd.isna(text) or text == "":
             return None
-        return str(text).strip().title()
+
+        # Basic normalization
+        cleaned = str(text).strip().title()
+
+        # Fix known data quality issues
+        corrections = {
+            'Trusted Netwok': 'Trusted Network',
+            'Testing, Inspection & Certificaiton': 'Testing, Inspection & Certification',
+            'Tranportation & Logistics': 'Transportation & Logistics',
+            'Facility Services': 'Facilities Services'  # Standardize to plural
+        }
+
+        return corrections.get(cleaned, cleaned)
 
     def load_pipeline_data(self, filename, header_row):
       """Load pipeline data with proper header detection"""
