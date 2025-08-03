@@ -13,7 +13,10 @@ class DealCloudTransformer:
             'sourcing_type': set(),
             'transaction_type': set(),
             'verticals': set(),
-            'sub_verticals': set()
+            'sub_verticals': set(),
+            'portfolio_status': set(),
+            'active_stage': set(),
+            'passed_rationale': set()
         }
 
     def log_transformation(self, table, action, record_count, notes=""):
@@ -319,9 +322,9 @@ class DealCloudTransformer:
                     enterprise_value = row.get('Enterprise Value', '')
                     equity_investment_est = row.get('Est. Equity Investment', '')
                     status = self.normalize_text(row.get('Status', ''))
-                    portfolio_status = row.get('Portfolio Company Status', '')
-                    active_stage = row.get('Active Stage', '')
-                    passed_rationale = row.get('Passed Rationale', '')
+                    portfolio_status = self.normalize_text(row.get('Portfolio Company Status', ''))
+                    active_stage = self.normalize_text(row.get('Active Stage', ''))
+                    passed_rationale = self.normalize_text(row.get('Passed Rationale', ''))
                     current_owner = row.get('Current Owner', '')
                     business_description = row.get('Business Description', '')
                     lead_md = row.get('Lead MD', '')
@@ -332,6 +335,9 @@ class DealCloudTransformer:
                     if transaction_type: self.choice_fields['transaction_type'].add(transaction_type)
                     if vertical: self.choice_fields['verticals'].add(vertical)
                     if sub_vertical: self.choice_fields['sub_verticals'].add(sub_vertical)
+                    if portfolio_status: self.choice_fields['portfolio_status'].add(portfolio_status)
+                    if active_stage: self.choice_fields['active_stage'].add(active_stage)
+                    if passed_rationale: self.choice_fields['passed_rationale'].add(passed_rationale)
 
                     deals.append({
                         'deal_id': deal_id,
